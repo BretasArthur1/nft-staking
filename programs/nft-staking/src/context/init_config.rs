@@ -5,8 +5,11 @@ use crate::state::StakeConfig;
 
 #[derive(Accounts)]
 pub struct InitializeConfig<'info> {
+    // The admin account, which will pay for the initialization
     #[account(mut)]
     pub admin: Signer<'info>,
+    
+    // The configuration account for staking, initialized with a specific space and seeds
     #[account(
         init, 
         payer = admin,
@@ -15,6 +18,8 @@ pub struct InitializeConfig<'info> {
         space = 8 + StakeConfig::INIT_SPACE,
     )]
     pub config: Account<'info, StakeConfig>,
+    
+    // The mint account for the rewards token, initialized if needed
     #[account(
         init_if_needed,
         payer = admin,
@@ -24,12 +29,18 @@ pub struct InitializeConfig<'info> {
         mint::authority = config,
     )]
     pub rewards_mint: Account<'info, Mint>,
+    
+    // System program required for account creation
     pub system_program: Program<'info, System>,
+    
+    // Token program required for minting tokens
     pub token_program: Program<'info, Token>,
 }
 
 impl<'info> InitializeConfig<'info> {
+    // Function to initialize the staking configuration
     pub fn initialize_config(&mut self, points_per_stake: u8, max_stake: u8, freeze_period: u32, bumps: &InitializeConfigBumps) -> Result<()> {
+        // Set the inner state of the config account with the provided parameters
         self.config.set_inner(StakeConfig {
             points_per_stake,
             max_stake,
